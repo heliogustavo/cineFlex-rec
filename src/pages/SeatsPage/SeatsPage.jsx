@@ -1,17 +1,32 @@
 import styled from "styled-components"
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { BrowserRouter, Link } from "react-router-dom";
+import { useParams } from 'react-router-dom';
+
+
 
 export default function SeatsPage() {
+
+    const [estadoAssento, setEstadoAssento] = useState([]);
+
+    const params = useParams();
+    console.log(params)
+
+    useEffect(() => {
+        const requisicao = axios.get(`https://mock-api.driven.com.br/api/v8/cineflex/showtimes/${params}/seats`)
+        requisicao.then(resposta => {
+            setEstadoAssento(resposta.data)
+
+        })
+    }, [ ]);
 
     return (
         <PageContainer>
             Selecione o(s) assento(s)
 
             <SeatsContainer>
-                <SeatItem>01</SeatItem>
-                <SeatItem>02</SeatItem>
-                <SeatItem>03</SeatItem>
-                <SeatItem>04</SeatItem>
-                <SeatItem>05</SeatItem>
+                <SeatItem>${estadoAssento.seats}</SeatItem>
             </SeatsContainer>
 
             <CaptionContainer>

@@ -1,6 +1,27 @@
 import styled from "styled-components"
+import { useParams } from "react-router-dom"
+import { useState } from "react";
+import { useEffect } from "react";
+import axios from "axios";
+
+
 
 export default function SessionsPage() {
+
+    const [listaDeSessoes, setListaDeSessoes] = useState([])
+
+
+    const params = useParams()
+    console.log(params)
+
+    useEffect(() => {
+        const requisicao = axios.get(`https://mock-api.driven.com.br/api/v8/cineflex/showtimes/${params.idFilme}/showtimes`)
+        requisicao.then(resposta => {
+            setListaDeSessoes(resposta.data)
+
+        })
+    }, []);
+
 
     return (
         <PageContainer>
