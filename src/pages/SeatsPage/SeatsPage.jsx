@@ -8,25 +8,38 @@ import { useParams } from 'react-router-dom';
 
 export default function SeatsPage() {
 
-    const [estadoAssento, setEstadoAssento] = useState([]);
+    const [dadosAssentos, setDadosAssentos] = useState([]);
+    const [listaDeAssentos, setListaDeAssentos] = useState([]);
+
+
+
 
     const params = useParams();
     console.log(params)
 
     useEffect(() => {
-        const requisicao = axios.get(`https://mock-api.driven.com.br/api/v8/cineflex/showtimes/${params}/seats`)
+        const requisicao = axios.get(`https://mock-api.driven.com.br/api/v8/cineflex/showtimes/${params.idDaSessao}/seats`)
+
         requisicao.then(resposta => {
-            setEstadoAssento(resposta.data)
+            setDadosAssentos(resposta.data)
+            setListaDeAssentos(resposta.data.seats)
+            console.log(setDadosAssentos)
 
         })
-    }, [ ]);
+    }, []);
 
     return (
         <PageContainer>
             Selecione o(s) assento(s)
 
             <SeatsContainer>
-                <SeatItem>${estadoAssento.seats}</SeatItem>
+                {listaDeAssentos.map(cadaAssento =>
+                    <Link to = {``}>
+                        <SeatItem>{cadaAssento.name}</SeatItem>
+                    </Link>
+                )
+                }
+
             </SeatsContainer>
 
             <CaptionContainer>
