@@ -1,32 +1,72 @@
-import styled from "styled-components"
+import styled from "styled-components";
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { BrowserRouter, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useParams } from 'react-router-dom';
-
+import { ThemeProvider } from 'styled-components';
+import Assento from "../../components/Assento";
 
 
 export default function SeatsPage() {
 
-    const [dadosAssentos, setDadosAssentos] = useState([]);
+    const [dadosAssentos, setDadosAssentos] = useState(null);
     const [listaDeAssentos, setListaDeAssentos] = useState([]);
-
-
-
-
+    const cor = {
+        indisponivel: ' #FBE192',
+        bordaIndisponivel: '#F7C52B',
+        disponivel: '#C3CFD9',
+        bordaDisponivel: '#7B8B99',
+        selecionado: '#1AAE9E',
+        bordaSelecionado: '#0E7D71',
+    };
+    const [name, setName] = useState("");
+	const [cpf, setCpf] = useState("");
     const params = useParams();
-    console.log(params)
+    const [assentoSelecionado, setAssentoSelecionado] = useState([])
+
 
     useEffect(() => {
-        const requisicao = axios.get(`https://mock-api.driven.com.br/api/v8/cineflex/showtimes/${params.idDaSessao}/seats`)
+        const requisicao = axios.get(`https://mock-api.driven.com.br/api/v8/cineflex/showtimes/${params.idSessao}/seats`)
 
-        requisicao.then(resposta => {
-            setDadosAssentos(resposta.data)
-            setListaDeAssentos(resposta.data.seats)
-            console.log(setDadosAssentos)
+        requisicao.then(dados => {
+            setDadosAssentos(dados.data)
+            setListaDeAssentos(dados.data.seats)
 
         })
     }, []);
+
+
+
+
+    function reserva (event) {
+        console.log("oi")
+		event.preventDefault(); 
+        if(assentoSelecionado.length>0){
+            const promise = axios.post("https://mock-api.driven.com.br/api/v5/cineflex/seats/book-many", {
+                ids: assentoSelecionado,
+                name: name,
+                cpf: Number(cpf)
+            });
+
+            promise.then((response)=>{
+                let inforDaReserva = {
+                    title: movieTitle,
+                    day: movieDay,
+                    hour: movieHour,
+                    seats: seatName,
+                    costumer: name,
+                    costumerCpf: cpf
+                };
+                navigate("/sucesso", {state: {bookingInfo}});
+            })
+        } else{
+            alert("Selecione pelo menos um assento!");
+        }
+    }
+
+    
+
+
 
     return (
         <PageContainer>
@@ -34,9 +74,8 @@ export default function SeatsPage() {
 
             <SeatsContainer>
                 {listaDeAssentos.map(cadaAssento =>
-                    <Link to = {``}>
-                        <SeatItem>{cadaAssento.name}</SeatItem>
-                    </Link>
+                    
+                        <Assento cadaAssento={cadaAssento} assentoSelecionado={assentoSelecionado} setAssentoSelecionado={setAssentoSelecionado} key={cadaAssento.id}></Assento>
                 )
                 }
 
@@ -44,39 +83,52 @@ export default function SeatsPage() {
 
             <CaptionContainer>
                 <CaptionItem>
-                    <CaptionCircle />
+                    <CaptionCircleSelecionado theme={cor} />
                     Selecionado
                 </CaptionItem>
                 <CaptionItem>
-                    <CaptionCircle />
+                    <CaptionCircleDisponivel theme={cor} />
                     Disponível
                 </CaptionItem>
                 <CaptionItem>
-                    <CaptionCircle />
+                    <CaptionCircleIndisponivel theme={cor} />
                     Indisponível
                 </CaptionItem>
             </CaptionContainer>
 
-            <FormContainer>
-                Nome do Comprador:
-                <input placeholder="Digite seu nome..." />
+                 <FormContainer onSubmit={reserva}>
+                        <span> Comprador:</span>
+                        <input type="text" 
+                               value={name} 
+                               required 
+                               onChange={e => setName(e.target.value)}
+                               placeholder="Digite seu nome..." 
+                        /> 
+                        <span>CPF do Comprador:</span>
+                        <input type="text" 
+                               value={cpf} 
+                               required 
+                               onChange={e => setCpf(e.target.value)}
+                               placeholder="Digite seu CPF..."
+                        /> 
+                        <button type="submit">Reservar Assento(s)</button> 
+                </FormContainer>
 
-                CPF do Comprador:
-                <input placeholder="Digite seu CPF..." />
+            {dadosAssentos ?
 
-                <button>Reservar Assento(s)</button>
-            </FormContainer>
+                <FooterContainer>
 
-            <FooterContainer>
-                <div>
-                    <img src={"https://br.web.img2.acsta.net/pictures/22/05/16/17/59/5165498.jpg"} alt="poster" />
-                </div>
-                <div>
-                    <p>Tudo em todo lugar ao mesmo tempo</p>
-                    <p>Sexta - 14h00</p>
-                </div>
-            </FooterContainer>
-
+                    <div>
+                        <img src={dadosAssentos.movie.posterURL} alt="poster" />
+                    </div>
+                    <div>
+                        <p>{dadosAssentos.movie.title}</p>
+                        <p>{dadosAssentos.day.weekday} - {dadosAssentos.day.date}</p>
+                    </div>
+                </FooterContainer> 
+         :
+         <></>   
+}
         </PageContainer>
     )
 }
@@ -102,7 +154,7 @@ const SeatsContainer = styled.div`
     justify-content: center;
     margin-top: 20px;
 `
-const FormContainer = styled.div`
+const FormContainer = styled.form`
     width: calc(100vw - 40px); 
     display: flex;
     flex-direction: column;
@@ -111,21 +163,54 @@ const FormContainer = styled.div`
     font-size: 18px;
     button {
         align-self: center;
+        width:225px;
+        height: 42px;
+        border-Radius: 3px;
+        background-color:#E8833A;
     }
     input {
-        width: calc(100vw - 60px);
+        Width: 327px;
+        Height: 51px;
+        ::placeholder{
+            font-weight: 400;
+            font-style: italic;
+            font-size: 18px;
+            line-height: 21.09px;
+        }
     }
 `
 const CaptionContainer = styled.div`
     display: flex;
-    flex-direction: row;
+    flex-direction: row;                            
     width: 300px;
     justify-content: space-between;
     margin: 20px;
 `
-const CaptionCircle = styled.div`
-    border: 1px solid blue;         // Essa cor deve mudar
-    background-color: lightblue;    // Essa cor deve mudar
+const CaptionCircleSelecionado = styled.div`
+    border: 1px #0E7D71;         // Essa cor deve mudar
+    background-color: #1AAE9E;    // Essa cor deve mudar
+    height: 25px;
+    width: 25px;
+    border-radius: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 5px 3px;
+`
+const CaptionCircleDisponivel = styled.div`
+    border: 1px  #7B8B99;         // Essa cor deve mudar
+    background-color: #C3CFD9;    // Essa cor deve mudar
+    height: 25px;
+    width: 25px;
+    border-radius: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 5px 3px;
+`
+const CaptionCircleIndisponivel = styled.div`
+    border: 1px #F7C52B;         // Essa cor deve mudar
+    background-color:   #FBE192;    // Essa cor deve mudar 
     height: 25px;
     width: 25px;
     border-radius: 25px;
@@ -140,19 +225,7 @@ const CaptionItem = styled.div`
     align-items: center;
     font-size: 12px;
 `
-const SeatItem = styled.div`
-    border: 1px solid blue;         // Essa cor deve mudar
-    background-color: lightblue;    // Essa cor deve mudar
-    height: 25px;
-    width: 25px;
-    border-radius: 25px;
-    font-family: 'Roboto';
-    font-size: 11px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 5px 3px;
-`
+
 const FooterContainer = styled.div`
     width: 100%;
     height: 120px;
